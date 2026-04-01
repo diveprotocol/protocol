@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this protocol specification, please cite it as below."
+authors:
+  - family-names: "Callec"
+    given-names: "Matéo Florian"
+    email: "mateo@callec.net"
+    orcid: "https://orcid.org/0009-0000-8025-5350"
+title: "The DIVE Protocol: Domain-based Integrity Verification Enforcement"
+version: 0.0.0
+date-released: 2026-03-31
+url: "https://github.com/diveprotocol/protocol"
+preferred-citation:
+  type: report
+  authors:
+    - family-names: "Callec"
+      given-names: "Matéo Florian"
+  title: "The DIVE Protocol"
+  institution: "Internet Engineering Task Force"
+  note: "Internet-Draft draft-callec-dive-00"
+  year: 2026
