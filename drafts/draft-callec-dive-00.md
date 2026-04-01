@@ -4,7 +4,7 @@ title: "Domain-based Integrity Verification Enforcement (DIVE) Version 0.1"
 abbrev: "DIVE"
 docname: draft-callec-dive-00
 submissiontype: IETF
-date: 2025-04-01
+date: 2026-04-01
 category: exp
 ipr: trust200902
 area: Security
