@@ -86,23 +86,23 @@ Unix timestamp:
 DIVE separates object security from key distribution:
 
 ~~~
-  Origin Server                  DNS (DNSSEC)
-  +------------------+           +----------------------+
-  | Signs response   |           | _dive TXT: policy    |
-  | body with Ed25519|           | <keyid>._divekey TXT:|
-  | private key      |           |   public key, params |
-  +--------+---------+           +-----------+----------+
-           |                                 |
-           | HTTP response                   | DNS/DNSSEC query
-           | (Signature: header)             |
-           v                                 v
-  +--------+---------------------------------+----------+
-  |                   DIVE Client                       |
-  |  1. Discover policy via _dive DNS record            |
-  |  2. Determine resource scope                        |
-  |  3. Resolve public key from _divekey DNS record     |
-  |  4. Verify HTTP Message Signature over response body|
-  +-----------------------------------------------------+
+  Origin Server                   DNS (DNSSEC)
+  +---------------+               +-----------------------+
+  | Body response |               | _dive TXT: policy     |
+  | signed with   |               | <keyid>._divekey TXT: |
+  | private key   |               |   public key, params  |
+  +--------+------+               +-----------+-----------+
+           |                                  |
+           | HTTP response                    | DNS/DNSSEC query
+           | (Signature: header)              |
+           v                                  v
+  +--------+----------------------------------+-----------+
+  |                      DIVE Client                      |
+  |  1. Discover policy via _dive DNS record              |
+  |  2. Determine resource scope                          |
+  |  3. Resolve public key from _divekey DNS record       |
+  |  4. Verify HTTP Message Signature over response body  |
+  +-------------------------------------------------------+
 ~~~
 
 The Signature and Signature-Input headers are defined by {{!RFC9421}}. The DNS records are defined by this document.
@@ -231,21 +231,23 @@ Each DIVE signature MUST cover the `content-digest` derived component ({{!RFC942
 
 The `keyid` parameter in `Signature-Input` MUST be set to the Key ID of the DNS key record used to create the signature. The `alg` parameter MUST be set to `"ed25519"` or `"ed448"` as appropriate.
 
-To support key rotation ({{key-rotation}}), a server MAY include multiple signatures in a single response by providing multiple `Signature` and `Signature-Input` entries ({{!RFC9421}} Section 4.2), each referencing a different Key ID. A DIVE client MUST attempt verification with each signature entry in order and MUST accept the resource as soon as one verification succeeds.
+To support key rotation ({{key-rotation}}), a server MAY include multiple signatures in a single response by providing multiple `Signature` and `Signature-Input` entries ({{!RFC9421}} Section 4.2), each referencing a different Key ID.
+
+A DIVE client MUST attempt verification using the available signature entries in order. The client MUST NOT assume prior knowledge of key ordering semantics beyond the order provided in the response. If the client has previously cached a public key matching a given `keyid`, it SHOULD prefer using the cached key for verification of the corresponding signature entry. Otherwise, the client MUST use the first available signature entry, and proceed to the next entry only if verification fails. The resource MUST be accepted as soon as one verification succeeds.
 
 ### Example
 
-The following example illustrates two concurrent signatures for key rotation. `keyABC` is the current signing key; `keyDEF` is a newly introduced key being rolled in.
+The following example illustrates two concurrent signatures for key rotation. `keyDEF` is the newly introduced signing key being rolled in, while `keyABC` is the previously active key.
 
 ~~~ http-message
 Content-Digest: sha-256=:BASE64DIGEST:
-Signature-Input: sigABC=("content-digest");keyid="keyABC";alg="ed25519", \
-                 sigDEF=("content-digest");keyid="keyDEF";alg="ed25519"
-Signature: sigABC=:BASE64SIG1:, \
-           sigDEF=:BASE64SIG2:
+Signature-Input: sigDEF=("content-digest");keyid="keyDEF";alg="ed25519", \
+                 sigABC=("content-digest");keyid="keyABC";alg="ed25519"
+Signature: sigDEF=:BASE64SIG2:, \
+           sigABC=:BASE64SIG1:
 ~~~
 
-Clients that have already cached `keyABC` will verify with `sigABC`; clients that have already rotated to `keyDEF` will verify with `sigDEF`.
+Clients that have already cached `keyDEF` will verify using `sigDEF` directly. Clients that have not cached any key will attempt verification starting with the first signature entry (`sigDEF`), and will fall back to `sigABC` if needed. Clients that have cached `keyABC` MAY directly use `sigABC` for verification, but MUST still follow the ordered fallback behavior if verification fails.
 
 The list of signatures SHOULD contain no more than three entries to maintain compatibility with HTTP implementations that impose header-length limits.
 
