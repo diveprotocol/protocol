@@ -142,7 +142,7 @@ The `_dive` TXT record is placed at the `_dive` label of the domain or subdomain
 
 ~~~ dns-rr
 _dive.example.com.  900  IN  TXT  (
-  "v=\"dive-draft-00\", "
+  "v=\"dive-draft-01\", "
   "scopes=(\"strict\"), "
   "directives=(\"https-required\"), "
   "cache=900, "
@@ -154,7 +154,7 @@ _dive.example.com.  900  IN  TXT  (
 ### Parameters
 
 `v` (REQUIRED):
-: Protocol version string. MUST be `"dive-draft-00"`. If absent, unrecognised, or unparseable, the client MUST treat DIVE as not supported for this domain.
+: Protocol version string. MUST be `"dive-draft-01"`. If absent, unrecognised, or unparseable, the client MUST treat DIVE as not supported for this domain.
 
 `scopes` (OPTIONAL):
 : Structured Field List of scope names (Strings). If absent or empty, no resource-level verification is performed, though other directives still apply.
