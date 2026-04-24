@@ -4,7 +4,7 @@ title: "Domain-based Integrity Verification Enforcement (DIVE) Version 0.1"
 abbrev: "DIVE"
 docname: draft-callec-dive-01
 submissiontype: IETF
-date: 2026-04-01
+date: 2026-04-24
 category: exp
 ipr: trust200902
 area: Security
@@ -48,7 +48,7 @@ informative:
 
 Domain-based Integrity Verification Enforcement (DIVE) is an application-layer protocol that provides cryptographic integrity and authenticity verification of HTTP response bodies by leveraging the Domain Name System Security Extensions (DNSSEC) as an out-of-band distribution channel for public keys.
 
-DIVE has two independent components: (1) an object-security layer, which uses HTTP Message Signatures {{!RFC9421}} to carry per-resource signatures in HTTP response headers, and (2) a DNS key-distribution layer, which publishes public keys and policy in DNSSEC-protected TXT records. A client implementing DIVE verifies each covered resource against the corresponding DNS-published public key before accepting it. An attacker must therefore compromise both the DNS infrastructure and the origin server simultaneously to deliver a tampered resource to a DIVE-compliant client.
+DIVE has two independent components: (1) an object-security layer, which uses HTTP Message Signatures (RFC 9421) to carry per-resource signatures in HTTP response headers, and (2) a DNS key-distribution layer, which publishes public keys and policy in DNSSEC-protected TXT records. A client implementing DIVE verifies each covered resource against the corresponding DNS-published public key before accepting it. An attacker must therefore compromise both the DNS infrastructure and the origin server simultaneously to deliver a tampered resource to a DIVE-compliant client.
 
 --- middle
 
@@ -260,8 +260,10 @@ The following example illustrates two concurrent signatures for key rotation. `k
 {: #http-example-rotation title="Example of Concurrent Signatures for Key Rotation"}
 ~~~ http-message
 Content-Digest: sha-256=:BASE64DIGEST:
-Signature-Input: sigDEF=("content-digest");keyid="keyDEF";alg="ed25519", \
-                 sigABC=("content-digest");keyid="keyABC";alg="ed25519"
+Signature-Input: sigDEF=("content-digest");keyid="keyDEF"; \
+                 alg="ed25519", \
+                 sigABC=("content-digest");keyid="keyABC"; \
+                 alg="ed25519"
 Signature: sigDEF=:BASE64SIG2:, \
            sigABC=:BASE64SIG1:
 ~~~
@@ -368,7 +370,8 @@ When a resource fails verification (whether blocked or allowed under `report-onl
     "scope": "strict"
   },
   "headers-received": {
-    "signature-input": "sig1=(\"content-digest\");keyid=\"keyABC\";alg=\"ed25519\"",
+    "signature-input":
+      "sig1=(\"content-digest\");keyid=\"keyABC\";alg=\"ed25519\"",
     "signature": "sig1=:BASE64SIG:",
     "content-digest": "sha-256=:BASE64DIGEST:"
   },
