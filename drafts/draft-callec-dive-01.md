@@ -29,6 +29,21 @@ author:
   orcid: 0009-0000-8025-5350
   country: France
 
+informative:
+  FIPS202:
+    title: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
+    author:
+      - org: National Institute of Standards and Technology
+    date: 2015-08
+    seriesinfo:
+      DOI: 10.6028/NIST.FIPS.202
+  CNSA2:
+    title: "Commercial National Security Algorithm Suite 2.0"
+    author:
+      - org: National Security Agency
+    date: 2022-09
+    target: https://media.defense.gov/2025/May/30/2003728741/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS.PDF
+
 --- abstract
 
 Domain-based Integrity Verification Enforcement (DIVE) is an application-layer protocol that provides cryptographic integrity and authenticity verification of HTTP response bodies by leveraging the Domain Name System Security Extensions (DNSSEC) as an out-of-band distribution channel for public keys.
@@ -85,6 +100,7 @@ Unix timestamp:
 
 DIVE separates object security from key distribution:
 
+{: #architecture-diagram title="DIVE Architecture and Verification Flow"}
 ~~~
   Origin Server                   DNS (DNSSEC)
   +---------------+               +-----------------------+
@@ -140,6 +156,7 @@ The `_dive` TXT record is placed at the `_dive` label of the domain or subdomain
 
 ### Example
 
+{: #dns-example-dive title="Example of a DIVE Policy Record"}
 ~~~ dns-rr
 _dive.example.com.  900  IN  TXT  (
   "v=\"dive-draft-01\", "
@@ -188,6 +205,7 @@ Key records are DNS TXT records at `<Key-ID>._divekey.<domain>`. A Key ID MAY co
 
 ### Example
 
+{: #dns-example-key title="Example of a DIVE Key Record"}
 ~~~ dns-rr
 keyABC._divekey.example.com.  900  IN  TXT  (
   "sig=\"ed25519\", "
@@ -239,6 +257,7 @@ A DIVE client MUST attempt verification using the available signature entries in
 
 The following example illustrates two concurrent signatures for key rotation. `keyDEF` is the newly introduced signing key being rolled in, while `keyABC` is the previously active key.
 
+{: #http-example-rotation title="Example of Concurrent Signatures for Key Rotation"}
 ~~~ http-message
 Content-Digest: sha-256=:BASE64DIGEST:
 Signature-Input: sigDEF=("content-digest");keyid="keyDEF";alg="ed25519", \
@@ -329,6 +348,7 @@ The client MUST NOT act upon the resource body before completing verification. T
 
 When a resource fails verification (whether blocked or allowed under `report-only`), and `report-to` is set, the client MUST POST to that URL with `Content-Type: application/json`:
 
+{: #report-example-json title="Example of a DIVE Issue Report"}
 ~~~ json
 {
   "report-version": "0.1",
@@ -459,6 +479,7 @@ IANA is requested to create the registry "DIVE Scope Names" under a new registry
 
 Initial contents:
 
+{: #iana-scope-registry title="Initial Contents of the DIVE Scope Names Registry"}
 | Scope Name | Description                         | Detection Criterion       | Reference     |
 | ---------- | ----------------------------------- | ------------------------- | ------------- |
 | `strict`   | All resources in the covered domain | Applies to all resources. | This document |
@@ -471,6 +492,7 @@ IANA is requested to create the registry "DIVE Directive Names" under the same r
 
 Initial contents:
 
+{: #iana-directive-registry title="Initial Contents of the DIVE Directive Names Registry"}
 | Directive Name   | Description                                                       | Reference     |
 | ---------------- | ----------------------------------------------------------------- | ------------- |
 | `https-required` | Client MUST NOT issue plain-HTTP requests; MUST upgrade or abort. | This document |
@@ -480,14 +502,15 @@ Initial contents:
 
 DIVE requires hash algorithms beyond those currently registered in the IANA "Hash Algorithms for HTTP Digest Fields" registry {{!RFC9530}}. IANA is requested to add the following entries to that registry:
 
-| Key        | Status | Description | Reference                                             |
-| ---------- | ------ | ----------- | ----------------------------------------------------- |
-| `sha-384`  | Active | SHA-384     | {{!RFC6234}}                                          |
-| `sha3-256` | Active | SHA3-256    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
-| `sha3-384` | Active | SHA3-384    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
-| `sha3-512` | Active | SHA3-512    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
+{: #iana-digest-algorithms title="Additions to the Hash Algorithms for HTTP Digest Fields Registry"}
+| Key       | Status | Description | Reference    |
+| --------- | ------ | ----------- | ------------ |
+| `sha-384` | Active | SHA-384     | {{!RFC6234}} |
+| `sha3-256`| Active | SHA3-256    | {{FIPS202}}  |
+| `sha3-384`| Active | SHA3-384    | {{FIPS202}}  |
+| `sha3-512`| Active | SHA3-512    | {{FIPS202}}  |
 
-These algorithms are required to satisfy the cryptographic posture mandated by [CNSA Suite 2.0](https://media.defense.gov/2022/Sep/07/2003071834/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS_.PDF) and to provide algorithm diversity between the SHA-2 and SHA-3 families, ensuring continued integrity guarantees in the event of a weakness discovered in either family.
+These algorithms are required to satisfy the cryptographic posture mandated by CNSA Suite 2.0 {{CNSA2}} and to provide algorithm diversity between the SHA-2 and SHA-3 families, ensuring continued integrity guarantees in the event of a weakness discovered in either family.
 
 SHA-384 provides a stronger security margin than SHA-256 within the SHA-2 family at acceptable performance cost. The SHA-3 family (Keccak) has an entirely different internal construction from SHA-2, meaning a structural break in one family does not compromise the other. For high-assurance environments, the ability to mandate SHA-3 exclusively via the `allowed-hash` key record parameter is a deliberate design goal of DIVE.
 
