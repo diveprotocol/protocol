@@ -263,7 +263,7 @@ Permitted hash algorithms for `Content-Digest`: `sha-256`, `sha-384`, `sha-512`,
 
 The client MUST locate the applicable `_dive` TXT record by querying from the resource's full FQDN upward, one label at a time, until a record is found or no labels remain. The most specific (deepest) record found applies.
 
-If no record is found, DIVE is not supported; the client MUST NOT block the resource on DIVE grounds.
+If no record is found, DIVE is not supported.
 
 If the policy record was retrieved without DNSSEC validation, the client MUST treat DIVE as not supported.
 
@@ -272,6 +272,8 @@ If a valid cached copy of the policy record has not expired, the client MUST use
 Upon retrieving the record, the client MUST verify the `v` parameter and parsability. It MUST apply `invalidate-keys-cache` and the `https-required` directive as specified in {{dive-record}}. It MUST cache the record per the `cache` parameter, subject to the 86400-second cap.
 
 DIVE verification is based on the resource's own origin. If a resource is fetched from a third-party domain, the client MUST look up that domain's `_dive` record, not the referring domain's.
+
+If DIVE is not supported, the client MAY choose to block the resource based on its own requirements.
 
 ## Step 2: Scope Determination
 
@@ -318,7 +320,8 @@ If at least one entry verifies successfully, the resource MUST be accepted.
 If all entries fail:
 
 - By default, the resource MUST be rejected.
-- If `report-only` is present, the resource MUST be accepted; a report MUST be sent per {{reporting}}.
+- If `report-to` is present, a report MUST be sent per {{reporting}}.
+- If `report-only` is present, the resource MUST be accepted.
 
 The client MUST NOT act upon the resource body before completing verification. The body MAY be downloaded concurrently with DNS resolution, but MUST NOT be delivered to the application until verification is complete.
 
@@ -339,13 +342,14 @@ When a resource fails verification (whether blocked or allowed under `report-onl
     "dnssec-validated": true
   },
   "resource": {
-    "url": "https://sub.example.com/static/app.js",
+    "url": "https://sub.example.com/downloads/invalid.zip",
     "method": "GET",
     "status-code": 200,
     "scope": "strict"
   },
   "headers-received": {
     "signature-input": "sig1=(\"content-digest\");keyid=\"keyABC\";alg=\"ed25519\"",
+    "signature": "sig1=:BASE64SIG:",
     "content-digest": "sha-256=:BASE64DIGEST:"
   },
   "key-resolution": [
@@ -386,9 +390,9 @@ Clients MUST enforce an absolute maximum cache duration of 86400 seconds for all
 To rotate a signing key without service disruption:
 
 1. Generate a new key pair and publish the new public key under a new Key ID in DNS.
-2. Wait for the old key record's DNS TTL to expire.
+2. Wait for the new key record to propagate throughout the DNS.
 3. Begin including both the old and new signatures in HTTP responses (using multiple `Signature` entries per {{http-signatures}}).
-4. Once all clients have had the opportunity to cache the new key, remove the old signature from responses.
+4. Once the new signature has been successfully validated across all resources (ensuring no service disruption), remove the old signature from HTTP responses.
 5. Remove the old key record from DNS.
 
 Key IDs MUST NOT be reused after their associated key records have been removed from DNS.
@@ -400,12 +404,13 @@ Upon discovering a compromised private key, the operator MUST:
 1. Immediately begin key rotation ({{key-rotation}}).
 2. Set `invalidate-keys-cache` in all applicable `_dive` policy records to a timestamp at or after the time of compromise.
 3. Remove the compromised key record from DNS as soon as the new key is operational.
+4. Maintain the `invalidate-keys-cache` directive for at least 86400 seconds to ensure all clients have flushed the compromised key, then remove it from the policy record to restore normal caching behavior.
 
 Operators MUST NOT set `report-only` as a temporary measure during key compromise remediation.
 
 ## Private Key Storage
 
-Operators SHOULD NOT store private signing keys on HTTP servers. Keys SHOULD be kept in offline or HSM environments, with signatures pre-computed and injected at deployment time.
+Operators SHOULD NOT store private signing keys on HTTP servers. Private keys SHOULD be stored in offline environments or within Hardware Security Modules (HSMs). However, the security of the signing path itself MUST also be enforced: HSM access interfaces and any remote signing services MUST be strongly authenticated, authorized, rate-limited, and audited, since an attacker who cannot retrieve the private key material may still obtain unauthorized signatures by abusing or compromising a signing endpoint. Signatures SHOULD be pre-computed where feasible and injected at deployment time.
 
 # Security Considerations {#security-considerations}
 
@@ -444,7 +449,7 @@ DIVE verifies response body integrity and authenticity. It does not protect HTTP
 
 ## Interaction with HTTP Caches
 
-DIVE headers in a cached response MUST be re-verified against current DNS records when the cached response is used. Operators SHOULD purge cached entries as part of key rotation to avoid stale-signature verification failures.
+The client MUST NOT hide, suppress, or otherwise obscure HTTP resources or HTTP header fields.
 
 # IANA Considerations {#iana-considerations}
 
