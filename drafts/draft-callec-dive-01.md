@@ -459,9 +459,9 @@ IANA is requested to create the registry "DIVE Scope Names" under a new registry
 
 Initial contents:
 
-| Scope Name | Description                          | Detection Criterion          | Reference     |
-| ---------- | ------------------------------------ | ---------------------------- | ------------- |
-| `strict`   | All resources in the covered domain  | Applies to all resources.    | This document |
+| Scope Name | Description                         | Detection Criterion       | Reference     |
+| ---------- | ----------------------------------- | ------------------------- | ------------- |
+| `strict`   | All resources in the covered domain | Applies to all resources. | This document |
 
 Custom scopes using the `x-` prefix are not subject to IANA registration.
 
@@ -471,10 +471,27 @@ IANA is requested to create the registry "DIVE Directive Names" under the same r
 
 Initial contents:
 
-| Directive Name   | Description                                                          | Reference     |
-| ---------------- | -------------------------------------------------------------------- | ------------- |
-| `https-required` | Client MUST NOT issue plain-HTTP requests; MUST upgrade or abort.    | This document |
-| `report-only`    | Client MUST NOT block failures; MUST report them instead.            | This document |
+| Directive Name   | Description                                                       | Reference     |
+| ---------------- | ----------------------------------------------------------------- | ------------- |
+| `https-required` | Client MUST NOT issue plain-HTTP requests; MUST upgrade or abort. | This document |
+| `report-only`    | Client MUST NOT block failures; MUST report them instead.         | This document |
+
+## Hash Algorithms for HTTP Digest Fields
+
+DIVE requires hash algorithms beyond those currently registered in the IANA "Hash Algorithms for HTTP Digest Fields" registry {{!RFC9530}}. IANA is requested to add the following entries to that registry:
+
+| Key        | Status | Description | Reference                                             |
+| ---------- | ------ | ----------- | ----------------------------------------------------- |
+| `sha-384`  | Active | SHA-384     | {{!RFC6234}}                                          |
+| `sha3-256` | Active | SHA3-256    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
+| `sha3-384` | Active | SHA3-384    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
+| `sha3-512` | Active | SHA3-512    | [FIPS PUB 202](https://doi.org/10.6028/NIST.FIPS.202) |
+
+These algorithms are required to satisfy the cryptographic posture mandated by [CNSA Suite 2.0](https://media.defense.gov/2022/Sep/07/2003071834/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS_.PDF) and to provide algorithm diversity between the SHA-2 and SHA-3 families, ensuring continued integrity guarantees in the event of a weakness discovered in either family.
+
+SHA-384 provides a stronger security margin than SHA-256 within the SHA-2 family at acceptable performance cost. The SHA-3 family (Keccak) has an entirely different internal construction from SHA-2, meaning a structural break in one family does not compromise the other. For high-assurance environments, the ability to mandate SHA-3 exclusively via the `allowed-hash` key record parameter is a deliberate design goal of DIVE.
+
+MD5, CRC32, and SHA-1 MUST NOT be registered or used within DIVE.
 
 ## DNS Resource Record Types
 
@@ -487,8 +504,9 @@ An experimental implementation of the DIVE protocol is available:
 - OpenDIVE Client: [https://github.com/diveprotocol/opendive-client](https://github.com/diveprotocol/opendive-client)
 - Protocol information: [https://diveprotocol.org](https://diveprotocol.org)
 
-# Acknowledgements
+--- back
+
+# Acknowledgements {#Acknowledgements}
+{: numbered="false"}
 
 The author would like to thank Benjamin Schwartz for his review and constructive feedback on earlier versions of this document.
-
-{backmatter}
