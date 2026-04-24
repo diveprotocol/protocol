@@ -158,11 +158,11 @@ The `_dive` TXT record is placed at the `_dive` label of the domain or subdomain
 
 {: #dns-example-dive title="Example of a DIVE Policy Record"}
 ~~~ dns-rr
-_dive.example.com.  900  IN  TXT  (
+_dive.example.com.  300  IN  TXT  (
   "v=\"dive-draft-01\", "
   "scopes=(\"strict\"), "
   "directives=(\"https-required\"), "
-  "cache=900, "
+  "cache=300, "
   "invalidate-keys-cache=1700000000, "
   "report-to=\"https://reports.example.com/dive\""
 )
@@ -185,7 +185,7 @@ _dive.example.com.  900  IN  TXT  (
 Unrecognised directive values MUST be ignored.
 
 `cache` (OPTIONAL):
-: Structured Field Integer. Number of seconds the client MAY cache this record (default: 0). MUST NOT exceed 86400 ({{cache-management}}).
+: Structured Field Integer. Number of seconds the client MAY cache this record (default: 0). MUST NOT exceed 3600 ({{cache-management}}).
 
 `invalidate-keys-cache` (OPTIONAL):
 : Structured Field Integer (Unix timestamp). When present, the client MUST purge cached key records for the domain stored at or before this timestamp. If the timestamp is in the future, the client MUST issue a fresh DNS query on each verification attempt until the timestamp has passed.
@@ -195,7 +195,7 @@ Unrecognised directive values MUST be ignored.
 
 Unrecognised parameters MUST be ignored.
 
-**Operational note:** Operators SHOULD set the DNS TTL of `_dive` records to 900 seconds.
+**Operational note:** Operators SHOULD set the DNS TTL of `_dive` records to 300 seconds.
 
 ## Key Records {#key-records}
 
@@ -288,7 +288,7 @@ If the policy record was retrieved without DNSSEC validation, the client MUST tr
 
 If a valid cached copy of the policy record has not expired, the client MUST use it.
 
-Upon retrieving the record, the client MUST verify the `v` parameter and parsability. It MUST apply `invalidate-keys-cache` and the `https-required` directive as specified in {{dive-record}}. It MUST cache the record per the `cache` parameter, subject to the 86400-second cap.
+Upon retrieving the record, the client MUST verify the `v` parameter and parsability. It MUST apply `invalidate-keys-cache` and the `https-required` directive as specified in {{dive-record}}. It MUST cache the record per the `cache` parameter, subject to the 3600-second cap.
 
 DIVE verification is based on the resource's own origin. If a resource is fetched from a third-party domain, the client MUST look up that domain's `_dive` record, not the referring domain's.
 
@@ -401,7 +401,7 @@ Failure to deliver a report MUST NOT affect the resource acceptance decision.
 
 ## Cache Management {#cache-management}
 
-Clients MUST enforce an absolute maximum cache duration of 86400 seconds for all DIVE records, regardless of the `cache` parameter. When a key record cannot be resolved, the client MUST evict any cached entry and issue a fresh DNS query before failing.
+Clients MUST enforce an absolute maximum cache duration of 3600 seconds for all `_dive` records and 86400 seconds for all `_divekey` records, regardless of the `cache` parameter. When a key record cannot be resolved, the client MUST evict any cached entry and issue a fresh DNS query before failing.
 
 # Operational Security {#operational-security}
 
@@ -455,7 +455,7 @@ Only Ed25519 and Ed448 are permitted for signing. Only SHA-256, SHA-384, SHA-512
 
 ## Cache Poisoning
 
-The 86400-second cache cap limits the impact of cache-poisoning attacks in which a malicious record with an artificially long `cache` value is injected. DNSSEC substantially mitigates this attack.
+Enforcing bounded cache lifetimes for `_dive` and `_divekey` records limits the impact of cache-poisoning attacks in which a malicious record with an artificially long `cache` value is injected. DNSSEC substantially mitigates this attack.
 
 ## Privacy
 
